@@ -1,6 +1,6 @@
 ---
 title: "Project 2"
-author: "Yuchen Gao"
+author: "Yuchen Gao, Bohan Guo, Zhiyang Liang, Frank Ren Qian, Zigui Song, Claris (Zihui) Wang"
 date: "2/21/2022"
 output: html_document
 ---
@@ -9,9 +9,16 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+> In this project, we are using the in vehicle coupon recommendation dataset from the UCI ML repository. The dataset is originally provided by the authors of the paper "A Bayesian Framework for Learning Rule Sets for Interpretable
+Classification" (https://www.jmlr.org/papers/volume18/16-003/16-003.pdf). This dataset is the survey results that describes different driving scenarios including the destination, current time, weather, passenger, etc., and then ask the person whether he will accept the coupon if he is the driver.
+
+> Business Question
+> We would like to 
+
 ```{r}
-x = 1+1
-x
+coupon_df = read.csv("in-vehicle-coupon-recommendation.csv")
+summary(coupon_df)
+table(coupon_df$coupon)
 ```
 
 
