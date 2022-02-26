@@ -8,17 +8,48 @@ output: html_document
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
-
+## Introduction
 > In this project, we are using the in vehicle coupon recommendation dataset from the UCI ML repository. The dataset is originally provided by the authors of the paper "A Bayesian Framework for Learning Rule Sets for Interpretable
 Classification" (https://www.jmlr.org/papers/volume18/16-003/16-003.pdf). This dataset is the survey results that describes different driving scenarios including the destination, current time, weather, passenger, etc., and then ask the person whether he will accept the coupon if he is the driver.
 
-> Business Question
-> We would like to 
+### Business Insights
+> We would like to control for coupon expiration time and coupon venue, which has 10 variations in total, and explore under which type of drivring scenarios drivers would mostly likely to accept the coupon. Using machine learning algorithms including linear, logistic, and hierachical clustering models, we will be able to create a model that can accurately identify the driving scenarios that would render drivers most likely to accept the coupon. These models will be beneficial to advertising companies to make them better allocate their funding resources to target those specific driving scenarios. 
 
+## Data Loading and Cleaning
 ```{r}
 coupon_df = read.csv("in-vehicle-coupon-recommendation.csv")
+
+# factorize columns
+coupon_df$destination = factor(coupon_df$destination)
+coupon_df$passanger = factor(coupon_df$passanger)
+coupon_df$weather = factor(coupon_df$weather)
+coupon_df$time = factor(coupon_df$time)
+coupon_df$gender = factor(coupon_df$gender)
+coupon_df$age = factor(coupon_df$age)
+coupon_df$maritalStatus = factor(coupon_df$maritalStatus)
+coupon_df$education = factor(coupon_df$education)
+coupon_df$occupation = factor(coupon_df$occupation)
+coupon_df$income = factor(coupon_df$income)
+coupon_df$car = factor(coupon_df$car)
+coupon_df$Bar = factor(coupon_df$Bar)
+coupon_df$CoffeeHouse = factor(coupon_df$CoffeeHouse)
+coupon_df$CarryAway = factor(coupon_df$CarryAway)
+coupon_df$RestaurantLessThan20 = factor(coupon_df$RestaurantLessThan20)
+coupon_df$Restaurant20To50 = factor(coupon_df$Restaurant20To50)
+
 summary(coupon_df)
-table(coupon_df$coupon)
+
 ```
+
+```{r}
+
+# control for coupon expiration time (1d or 2hrs)
+coupon_df = split(coupon_df, coupon_df$expiration)
+coupon_df_1d = subset(coupon_df$"1d")
+coupon_df_2h = subset(coupon_df$"2h")
+
+
+```
+
 
 
