@@ -42,13 +42,14 @@ summary(coupon_df)
 ```
 
 ```{r}
-
+logit.model = glm(Y ~., data = coupon_df, family = "binomial")
+summary(logit.model)
 # control for coupon expiration time (1d or 2hrs)
 coupon_df = split(coupon_df, coupon_df$expiration)
 coupon_df_1d = subset(coupon_df$"1d")
 coupon_df_2h = subset(coupon_df$"2h")
 
-
+summary(coupon_df_1d)
 ```
 
 
