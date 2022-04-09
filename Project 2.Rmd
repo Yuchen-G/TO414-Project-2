@@ -13,7 +13,7 @@ knitr::opts_chunk$set(echo = TRUE)
 Classification" (https://www.jmlr.org/papers/volume18/16-003/16-003.pdf). This dataset is the survey results that describes different driving scenarios including the destination, current time, weather, passenger, etc., and then ask the person whether he will accept the coupon if he is the driver.
 
 ### Business Insights
-> We would like to control for coupon expiration time and coupon venue, which has 10 variations in total, and explore under which type of drivring scenarios drivers would mostly likely to accept the coupon. Using machine learning algorithms including linear, logistic, and hierachical clustering models, we will be able to create a model that can accurately identify the driving scenarios that would render drivers most likely to accept the coupon. These models will be beneficial to advertising companies to make them better allocate their funding resources to target those specific driving scenarios. 
+> We would like to control for coupon expiration time and coupon venue, which has 10 variations in total, and explore under which type of driving scenarios drivers would mostly likely to accept the coupon. Using machine learning algorithms including linear, logistic, and hierachical clustering models, we will be able to create a model that can accurately identify the driving scenarios that would render drivers most likely to accept the coupon. These models will be beneficial to advertising companies to make them better allocate their funding resources to target those specific driving scenarios. 
 
 ## Data Loading and Cleaning
 ```{r}
@@ -42,12 +42,27 @@ summary(coupon_df)
 ```
 
 ```{r}
-
+logit.model = glm(Y ~., data = coupon_df, family = "binomial")
+summary(logit.model)
 # control for coupon expiration time (1d or 2hrs)
-coupon_df = split(coupon_df, coupon_df$expiration)
-coupon_df_1d = subset(coupon_df$"1d")
-coupon_df_2h = subset(coupon_df$"2h")
+# coupon_df = split(coupon_df, coupon_df$expiration)
+# coupon_df_1d = subset(coupon_df$"1d")
+# coupon_df_2h = subset(coupon_df$"2h")
 
+summary(coupon_df)
+```
+
+EDA: PCA to analyze the most important features, visualization
+Create 3 individual models: Decision Tree, SVM, Logistic Regression
+Create stacked model: Decision Tree or Random Forest
+
+PCA
+```{r}
+library(faraway)
+coupon.dummy = as.data.frame(model.matrix(~. -1, data=coupon_df))
+coupon_pca = prcomp(coupon.dummy)
+
+str(coupon_df)
 
 ```
 
