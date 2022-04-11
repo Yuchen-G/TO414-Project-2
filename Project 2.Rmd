@@ -13,7 +13,12 @@ knitr::opts_chunk$set(echo = TRUE)
 Classification" (https://www.jmlr.org/papers/volume18/16-003/16-003.pdf). This dataset is the survey results that describes different driving scenarios including the destination, current time, weather, passenger, etc., and then ask the person whether he will accept the coupon if he is the driver.
 
 ### Business Insights
-> We would like to control for coupon expiration time and coupon venue, which has 10 variations in total, and explore under which type of driving scenarios drivers would mostly likely to accept the coupon. Using machine learning algorithms including linear, logistic, and hierachical clustering models, we will be able to create a model that can accurately identify the driving scenarios that would render drivers most likely to accept the coupon. These models will be beneficial to advertising companies to make them better allocate their funding resources to target those specific driving scenarios. 
+> In this project, we are a market research firm conducting data analysis to help restaurants acquire more customers. Our clients (restaurants) include coffee houses, carryout & takeaway restaurants, bar, etc. Our clients would like to send coupons to the customers who have recorded their information in their databases. However, sending coupons to all of the subscribers will easily create list fatigue, which means the subscribers will stop engaging with email marketing campaigns. In order not to lose many subscribers while increase the coupon response rate, these restaurants would like us to find out who will most likely to accept the coupon given the information they provided in the database and other contextual information including weather, time, and teamperture. Thus, we would like to control for restuarant type, and use machine learning algorithms including linear, logistic, and decision tree models and stacking technique to create a model that can accurately identify who will accept the coupon given customer and contextual information.
+
+Data Preparation: train_test_split, (variable selection)
+Create 3 individual models: Decision Tree, SVM, Logistic Regression
+Create stacked model: Decision Tree or Linear Model
+
 
 ## Data Loading and Cleaning
 ```{r}
@@ -37,34 +42,52 @@ coupon_df$CarryAway = factor(coupon_df$CarryAway)
 coupon_df$RestaurantLessThan20 = factor(coupon_df$RestaurantLessThan20)
 coupon_df$Restaurant20To50 = factor(coupon_df$Restaurant20To50)
 
-summary(coupon_df)
-
+# summary(coupon_df)
+bar_df = coupon_df[coupon_df["coupon"] == "Bar",]
+carryout_df = coupon_df[coupon_df["coupon"] == "Carry out & Take away",]
+cafe_df = coupon_df[coupon_df["coupon"] == "Coffee House",]
+restaurant20To50_df = coupon_df[coupon_df["coupon"] == "Restaurant(20-50)",]
+restaurantLessThan20_df = coupon_df[coupon_df["coupon"] == "Restaurant(<20)",]
 ```
 
+Train test split and create training set for stacked model
 ```{r}
-logit.model = glm(Y ~., data = coupon_df, family = "binomial")
+set.seed(42)
+test_set = sample(1:nrow(coupon_df), 0.2*nrow(coupon_df))
+
+df_train = df[-test_set,]
+df_test = df[test_set,]
+
+stacked_train = 
+```
+
+
+Feature Selection
+```{r}
+# coupon.dummy = as.data.frame(model.matrix(~. -1, data=coupon_df))
+
+# logit.model = glm(Y ~., data = coupon_df, family = "binomial")
+# summary(logit.model)
+```
+
+
+Logistic Regression
+```{r}
+venue = cafe_df
+logit.model = glm(Y ~., data = venue, family = "binomial")
 summary(logit.model)
-# control for coupon expiration time (1d or 2hrs)
-# coupon_df = split(coupon_df, coupon_df$expiration)
-# coupon_df_1d = subset(coupon_df$"1d")
-# coupon_df_2h = subset(coupon_df$"2h")
-
-summary(coupon_df)
 ```
 
-EDA: PCA to analyze the most important features, visualization
-Create 3 individual models: Decision Tree, SVM, Logistic Regression
-Create stacked model: Decision Tree or Random Forest
 
-PCA
+Random Forest
 ```{r}
-library(faraway)
-coupon.dummy = as.data.frame(model.matrix(~. -1, data=coupon_df))
-coupon_pca = prcomp(coupon.dummy)
+rfurl = "https://cran.r-project.org/src/contrib/Archive/randomForest/randomForest_4.6-14.tar.gz"
 
-str(coupon_df)
+library(randomForest)
+rf = randomForest(Y ~ ., data="coupon_df")
 
 ```
+
 
 
 
