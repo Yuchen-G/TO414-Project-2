@@ -3,25 +3,25 @@ title: "Project 2"
 author: "Yuchen Gao, Bohan Guo, Zhiyang Liang, Frank Ren Qian, Zigui Song, Claris (Zihui) Wang"
 date: "2/21/2022"
 output: html_document
----
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 ## Introduction
-> In this project, we are using the in vehicle coupon recommendation dataset from the UCI ML repository. The dataset is originally provided by the authors of the paper "A Bayesian Framework for Learning Rule Sets for Interpretable
+In this project, we are using the in vehicle coupon recommendation dataset from the UCI ML repository. The dataset is originally provided by the authors of the paper "A Bayesian Framework for Learning Rule Sets for Interpretable
 Classification" (https://www.jmlr.org/papers/volume18/16-003/16-003.pdf). This dataset is the survey results that describes different driving scenarios including the destination, current time, weather, passenger, etc., and then ask the person whether he will accept the coupon if he is the driver.
 
 ### Business Insights
-> In this project, we are a market research firm conducting data analysis to help restaurants acquire more customers. Our clients (restaurants) include coffee houses, carryout & takeaway restaurants, bar, etc. Our clients would like to send coupons to the customers who have recorded their information in their databases. However, sending coupons to all of the subscribers will easily create list fatigue, which means the subscribers will stop engaging with email marketing campaigns. In order not to lose many subscribers while increase the coupon response rate, these restaurants would like us to find out who will most likely to accept the coupon given the information they provided in the database and other contextual information including weather, time, and teamperture. Thus, we would like to control for restuarant type, and use machine learning algorithms including linear, logistic, and decision tree models and stacking technique to create a model that can accurately identify who will accept the coupon given customer and contextual information.
+In this project, we are a market research firm conducting data analysis to help restaurants acquire more customers. Our clients (restaurants) include coffee houses, carryout & takeaway restaurants, bar, etc. Our clients would like to send coupons to the customers who have recorded their information in their databases. However, sending coupons to all of the subscribers will easily create list fatigue, which means the subscribers will stop engaging with email marketing campaigns. In order not to lose many subscribers while increase the coupon response rate, these restaurants would like us to find out who will most likely to accept the coupon given the information they provided in the database and other contextual information including weather, time, and teamperture. Thus, we would like to control for restuarant type, and use machine learning algorithms including linear, logistic, and decision tree models and stacking technique to create a model that can accurately identify who will accept the coupon given customer and contextual information.
 
-Data Preparation: train_test_split, (variable selection)
-Create 3 individual models: Decision Tree, SVM, Logistic Regression
-Create stacked model: Decision Tree or Linear Model
+#Data Preparation: train_test_split, (variable selection)
+#Create 3 individual models: Decision Tree, SVM, Logistic Regression
+#Create stacked model: Decision Tree or Linear Model
 
 
 ## Data Loading and Cleaning
 ```{r}
+
 coupon_df = read.csv("in-vehicle-coupon-recommendation.csv")
 
 # factorize columns
@@ -48,17 +48,28 @@ carryout_df = coupon_df[coupon_df["coupon"] == "Carry out & Take away",]
 cafe_df = coupon_df[coupon_df["coupon"] == "Coffee House",]
 restaurant20To50_df = coupon_df[coupon_df["coupon"] == "Restaurant(20-50)",]
 restaurantLessThan20_df = coupon_df[coupon_df["coupon"] == "Restaurant(<20)",]
+
+bar_df["coupon"] = NULL
+carryout_df["coupon"] = NULL
+cafe_df["coupon"] = NULL
+restaurant20To50_df["coupon"] = NULL
+restaurantLessThan20_df["coupon"] = NULL
 ```
 
 Train test split and create training set for stacked model
 ```{r}
+
 set.seed(42)
-test_set = sample(1:nrow(coupon_df), 0.2*nrow(coupon_df))
 
-df_train = df[-test_set,]
-df_test = df[test_set,]
+venue = cafe_df
+venue["Y"] = as.factor(venue[,"Y"])
 
-stacked_train = 
+test_set = sample(1:nrow(venue), 0.2*nrow(venue))
+
+df_train = venue[-test_set,]
+df_test = venue[test_set,]
+
+# stacked_train = 
 ```
 
 
@@ -73,47 +84,38 @@ Feature Selection
 
 Logistic Regression
 ```{r}
-venue = cafe_df
-logit.model = glm(Y ~., data = venue, family = "binomial")
+
+logit.model = glm(Y ~., data = df_train, family = "binomial")
 summary(logit.model)
 ```
 
 
 Random Forest
 ```{r}
-<<<<<<< HEAD
-rfurl = "https://cran.r-project.org/src/contrib/Archive/randomForest/randomForest_4.6-14.tar.gz"
 
+library(caret)
 library(randomForest)
-rf = randomForest(Y ~ ., data="coupon_df")
-=======
-library(faraway)
-
-coupon_dummy = as.data.frame(model.matrix(~. -1, data = coupon_df))
-
-coupon_pca = prcomp(coupon_dummy)
-
-round(coupon_pca$sdev,3)
-
-plot(1:10,coupon_pca$sdev[1:10],type = "l", xlab = "PC number", ylab = "SD of PC" )
-
-plot(1:26,coupon_pca$sdev[1:26],type = "l", xlab = "PC number", ylab = "SD of PC" )
-```
+set.seed(42)
 
 
+ctrl = trainControl(method="cv", number=5, selectionFunction="best")
+grid <- expand.grid(.mtry=c(15,24))
+modellist <- list()
 
-```{r}
-#PLS
-library(pls)
-library(faraway)
-plsg = plsr(Y~., data = coupon_df, ncomp = 26, validation = "CV", segments = 10)
 
-pls_rmsCV = RMSEP(plsg, estimate = "CV")
-plot(pls_rmsCV$val, xlab = "Pc number", ylab = "CV RMS")
-which.min(pls_rmsCV$val)
->>>>>>> 4f986b66201fbe88797f00bd068ff51d459677ac
+for (ntree in c(50,100,300,500)) {
+  fit = train(Y ~., data = df_train, metric = "kappa", 
+  method = "rf", trControl = ctrl, ntree = ntree, tuneGrid = grid)
+  key <- toString(ntree)
+  modellist[[key]] <- fit
+}
+
+results <- resamples(modellist)
+summary(results)
 
 ```
+
+
 
 
 ```{r}
