@@ -81,12 +81,83 @@ summary(logit.model)
 
 Random Forest
 ```{r}
+<<<<<<< HEAD
 rfurl = "https://cran.r-project.org/src/contrib/Archive/randomForest/randomForest_4.6-14.tar.gz"
 
 library(randomForest)
 rf = randomForest(Y ~ ., data="coupon_df")
+=======
+library(faraway)
+
+coupon_dummy = as.data.frame(model.matrix(~. -1, data = coupon_df))
+
+coupon_pca = prcomp(coupon_dummy)
+
+round(coupon_pca$sdev,3)
+
+plot(1:10,coupon_pca$sdev[1:10],type = "l", xlab = "PC number", ylab = "SD of PC" )
+
+plot(1:26,coupon_pca$sdev[1:26],type = "l", xlab = "PC number", ylab = "SD of PC" )
+```
+
+
+
+```{r}
+#PLS
+library(pls)
+library(faraway)
+plsg = plsr(Y~., data = coupon_df, ncomp = 26, validation = "CV", segments = 10)
+
+pls_rmsCV = RMSEP(plsg, estimate = "CV")
+plot(pls_rmsCV$val, xlab = "Pc number", ylab = "CV RMS")
+which.min(pls_rmsCV$val)
+>>>>>>> 4f986b66201fbe88797f00bd068ff51d459677ac
 
 ```
+
+
+```{r}
+#Use lasso for variable selection
+library(MASS)
+library(glmnet)
+
+
+X = model.matrix(Y ~ ., coupon_df)[, -1]
+y = coupon_df$Y
+
+
+grid <- 10^seq(10, -2, length = 100)
+ridge.mod <- glmnet(X, y, alpha = 1, lambda = grid)
+dim(coef(ridge.mod))
+
+cv.out <- cv.glmnet(X, y, alpha = 1)
+
+bestlam <- cv.out$lambda.1se
+bestlam
+
+out <- glmnet(X, y, alpha = 1)
+coefs <- predict(out, type = "coefficients", s = bestlam)
+
+selected_features = c(dimnames(coefs)[[1]][which(coefs != 0)])[2:60]
+selected_features
+
+```
+By lasso selection, we figure out that some of the variables can be shrinken to zero and so that we can take it off from our model. For instance, the variables direction_opp, toCoupon_GEQ25min,toCoupon_GEQ5min,has_children. Hence, we can take off those 4 variables and focus on the rest of predictors.
+
+
+
+```{r}
+library(randomForest)
+
+n = sqrt(ncol(coupon_df))
+
+n
+
+rm = randomForest(Y ~ . -toCoupon_GEQ5min -toCoupon_GEQ25min - has_children - direction_opp , data = coupon_df, mtry = n,importance=TRUE)
+
+
+```
+
 
 
 
