@@ -3,6 +3,7 @@ title: "Project 2"
 author: "Yuchen Gao, Bohan Guo, Zhiyang Liang, Frank Ren Qian, Zigui Song, Claris (Zihui) Wang"
 date: "2/21/2022"
 output: html_document
+---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
@@ -67,89 +68,15 @@ set.seed(42)
 venue = cafe_df
 venue["Y"] = as.factor(venue[,"Y"])
 
-test_set = sample(1:nrow(venue), 0.2*nrow(venue))
+test_set = sample(1:nrow(venue), 0.5*nrow(venue))
 
 df_train = venue[-test_set,]
 df_test = venue[test_set,]
 
 
-# stacked_train = 
+stacked_train = as.data.frame(df_test["Y"])
+colnames(stacked_train) = "gt"
 ```
-
-
-Feature Selection
-```{r}
-# coupon.dummy = as.data.frame(model.matrix(~. -1, data=coupon_df))
-
-# logit.model = glm(Y ~., data = coupon_df, family = "binomial")
-# summary(logit.model)
-```
-
-
-Logistic Regression
-```{r}
-
-logit.model = glm(Y ~., data = df_train, family = "binomial")
-summary(logit.model)
-```
-
-
-Random Forest
-```{r}
-
-library(caret)
-library(randomForest)
-set.seed(42)
-
-
-ctrl = trainControl(method="cv", number=5, selectionFunction="best")
-grid <- expand.grid(.mtry=c(15,24))
-modellist <- list()
-
-
-for (ntree in c(50,100,300,500)) {
-  fit = train(Y ~., data = df_train, metric = "kappa", 
-  method = "rf", trControl = ctrl, ntree = ntree, tuneGrid = grid)
-  key <- toString(ntree)
-  modellist[[key]] <- fit
-}
-
-results <- resamples(modellist)
-summary(results)
-
-# ntree=300 has the highest Kappa and accuracy score. 
-# Min.      1st Qu.   Median      Mean   3rd Qu.      Max.      NA's
-# 0.5180287 0.5406788 0.5588248 0.5508877 0.5650060 0.5719001    0
-
-```
-
-tuned model
-```{r}
-rf = randomForest(Y ~., data = df_train, metric = "kappa", 
-  method = "rf", ntree = 100, mtry=24)
-
-rf_pred = predict(rf, df_test[colnames(df_test) != "Y"])
-
-rf_cm = confusionMatrix(data = as.factor(rf_pred), reference = as.factor(df_test$Y))
-rf_cm
-
-```
-
-
-SVM
-```{r}
-
-library(kernlab)
-svm = ksvm(Y ~., data=df_train, kernel="vanilladot")
-y_pred = predict(svm, df_test[colnames(df_test) != "Y"])
-
-svm_cm = confusionMatrix(data = as.factor(rf_pred), reference = as.factor(df_test$Y))
-svm_cm
-
-
-```
-
-
 
 
 ```{r}
@@ -174,25 +101,122 @@ bestlam
 out <- glmnet(X, y, alpha = 1)
 coefs <- predict(out, type = "coefficients", s = bestlam)
 
-selected_features = c(dimnames(coefs)[[1]][which(coefs != 0)])[2:60]
+selected_features = c(dimnames(coefs)[[1]][which(coefs != 0)])[2:56]
 selected_features
 
 ```
-By lasso selection, we figure out that some of the variables can be shrinken to zero and so that we can take it off from our model. For instance, the variables direction_opp, toCoupon_GEQ25min,toCoupon_GEQ5min,has_children. Hence, we can take off those 4 variables and focus on the rest of predictors.
+By lasso selection, we figure out that some of the variables can be shrinken to zero and so that we can take it off from our model. For instance, the variables direction_opp, toCoupon_GEQ25min,toCoupon_GEQ15min,has_children. Hence, we can take off those 4 variables and focus on the rest of predictors.
+
+
+
 
 
 
 ```{r}
+#Logistic Regression
+logit.model = glm(Y ~.-direction_opp -toCoupon_GEQ25min - toCoupon_GEQ15min-has_children, data = df_train, family = "binomial")
+summary(logit.model)
+
+prob = predict(logit.model, df_train, type='response')
+lr_pred = ifelse(prob>=0.5, 1,0)
+
+confusionMatrix(factor(lr_pred), factor(df_train$Y))
+```
+
+
+
+```{r}
+#Random Forest
+library(caret)
 library(randomForest)
+# set.seed(42)
+# 
+# 
+# ctrl = trainControl(method="cv", number=5, selectionFunction="best")
+# grid <- expand.grid(.mtry=c(15,24))
+# modellist <- list()
+# 
+# 
+# for (ntree in c(50,100,300,500)) {
+#   fit = train(Y ~., data = df_train, metric = "kappa", 
+#   method = "rf", trControl = ctrl, ntree = ntree, tuneGrid = grid)
+#   key <- toString(ntree)
+#   modellist[[key]] <- fit
+# }
+# 
+# results <- resamples(modellist)
+# summary(results)
 
-n = sqrt(ncol(coupon_df))
+# ntree=300 has the highest Kappa and accuracy score. 
+# Min.      1st Qu.   Median      Mean   3rd Qu.      Max.      NA's
+# 0.5180287 0.5406788 0.5588248 0.5508877 0.5650060 0.5719001    0
 
-n
+```
 
-rm = randomForest(Y ~ . -toCoupon_GEQ5min -toCoupon_GEQ25min - has_children - direction_opp , data = coupon_df, mtry = n,importance=TRUE)
+
+```{r}
+#tuned model
+rf = randomForest(Y ~.-direction_opp -toCoupon_GEQ25min - toCoupon_GEQ15min-has_children, data = df_train, metric = "kappa", method = "rf", ntree = 100, mtry=21)
+
+rf
+
+rf_pred = predict(rf, df_test[colnames(df_test) != "Y"])
+
+rf_cm = confusionMatrix(data = as.factor(rf_pred), reference = as.factor(df_test$Y))
+rf_cm
+
+importance(rf)
+varImpPlot(rf)
+```
+
+
+
+```{r}
+#SVM
+library(kernlab)
+svm = ksvm(Y ~.-direction_opp -toCoupon_GEQ25min - toCoupon_GEQ15min-has_children, data=df_train, kernel="vanilladot")
+y_pred = predict(svm, df_test[colnames(df_test) != "Y"])
+
+svm_cm = confusionMatrix(data = as.factor(rf_pred), reference = as.factor(df_test$Y))
+svm_cm
 
 
 ```
+
+
+```{r}
+#Stacked Model
+library(C50)
+svm_column <- c(y_pred)
+rf_column = c(rf_pred)
+lr_column <- c(lr_pred)
+
+stacked_set = data.frame(svm_column,rf_column,lr_column,df_test["Y"])
+
+
+#stacked_train = as.data.frame(df_test["Y"])
+#colnames(stacked_train) = "gt"
+```
+
+
+```{r}
+test_set = sample(1:nrow(stacked_set), 0.2*nrow(stacked_set)) 
+
+stack_train = stacked_set[-test_set,]
+stack_test = stacked_set[test_set,]
+
+stack_dt = C5.0(Y~., data = stack_train)
+
+stack_dt
+plot(stack_dt)
+
+stack_pred <- predict(stack_dt, stack_test)
+library(gmodels)
+
+confusionMatrix(stack_pred, as.factor(stack_test$Y), mode="prec_recall")
+```
+
+
 
 
 
