@@ -6,6 +6,7 @@ output: html_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+
 ```
 ## Introduction
 In this project, we are using the in vehicle coupon recommendation dataset from the UCI ML repository. The dataset is originally provided by the authors of the paper "A Bayesian Framework for Learning Rule Sets for Interpretable
@@ -41,6 +42,7 @@ coupon_df$CoffeeHouse = factor(coupon_df$CoffeeHouse)
 coupon_df$CarryAway = factor(coupon_df$CarryAway)
 coupon_df$RestaurantLessThan20 = factor(coupon_df$RestaurantLessThan20)
 coupon_df$Restaurant20To50 = factor(coupon_df$Restaurant20To50)
+coupon_df$toCoupon_GEQ5min = NULL
 
 # summary(coupon_df)
 bar_df = coupon_df[coupon_df["coupon"] == "Bar",]
@@ -56,6 +58,7 @@ restaurant20To50_df["coupon"] = NULL
 restaurantLessThan20_df["coupon"] = NULL
 ```
 
+
 Train test split and create training set for stacked model
 ```{r}
 
@@ -68,6 +71,7 @@ test_set = sample(1:nrow(venue), 0.2*nrow(venue))
 
 df_train = venue[-test_set,]
 df_test = venue[test_set,]
+
 
 # stacked_train = 
 ```
@@ -112,6 +116,36 @@ for (ntree in c(50,100,300,500)) {
 
 results <- resamples(modellist)
 summary(results)
+
+# ntree=300 has the highest Kappa and accuracy score. 
+# Min.      1st Qu.   Median      Mean   3rd Qu.      Max.      NA's
+# 0.5180287 0.5406788 0.5588248 0.5508877 0.5650060 0.5719001    0
+
+```
+
+tuned model
+```{r}
+rf = randomForest(Y ~., data = df_train, metric = "kappa", 
+  method = "rf", ntree = 100, mtry=24)
+
+rf_pred = predict(rf, df_test[colnames(df_test) != "Y"])
+
+rf_cm = confusionMatrix(data = as.factor(rf_pred), reference = as.factor(df_test$Y))
+rf_cm
+
+```
+
+
+SVM
+```{r}
+
+library(kernlab)
+svm = ksvm(Y ~., data=df_train, kernel="vanilladot")
+y_pred = predict(svm, df_test[colnames(df_test) != "Y"])
+
+svm_cm = confusionMatrix(data = as.factor(rf_pred), reference = as.factor(df_test$Y))
+svm_cm
+
 
 ```
 
