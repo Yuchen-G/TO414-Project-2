@@ -45,6 +45,13 @@ coupon_df$RestaurantLessThan20 = factor(coupon_df$RestaurantLessThan20)
 coupon_df$Restaurant20To50 = factor(coupon_df$Restaurant20To50)
 coupon_df$toCoupon_GEQ5min = NULL
 
+
+# sum(is.na(coupon_df))
+# 
+# print(nrow(coupon_df), ncol(coupon_df))
+# na.omit(coupon_df)
+# print(nrow(coupon_df), ncol(coupon_df))
+
 # summary(coupon_df)
 bar_df = coupon_df[coupon_df["coupon"] == "Bar",]
 carryout_df = coupon_df[coupon_df["coupon"] == "Carry out & Take away",]
@@ -57,6 +64,9 @@ carryout_df["coupon"] = NULL
 cafe_df["coupon"] = NULL
 restaurant20To50_df["coupon"] = NULL
 restaurantLessThan20_df["coupon"] = NULL
+
+summary(bar_df)
+
 ```
 
 
@@ -65,14 +75,21 @@ Train test split and create training set for stacked model
 
 set.seed(42)
 
-venue = cafe_df
+venue = restaurantLessThan20_df
 venue["Y"] = as.factor(venue[,"Y"])
+
+#If the number of the observation in the restaurant is even number, then evenly split the data into test and train. If the observation numbers are odd, then take one observation from the testing set and make them have equal number of observations.
 
 test_set = sample(1:nrow(venue), 0.5*nrow(venue))
 
+# even
 df_train = venue[-test_set,]
 df_test = venue[test_set,]
 
+# odd
+if (nrow(df_train)!=nrow(df_test)){
+  df_train = df_train[2:nrow(df_train),]
+}
 
 stacked_train = as.data.frame(df_test["Y"])
 colnames(stacked_train) = "gt"
@@ -83,6 +100,7 @@ colnames(stacked_train) = "gt"
 #Use lasso for variable selection
 library(MASS)
 library(glmnet)
+library(caret)
 
 
 X = model.matrix(Y ~ ., coupon_df)[, -1]
